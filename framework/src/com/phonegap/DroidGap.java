@@ -42,6 +42,7 @@ import android.view.KeyEvent;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.CookieManager;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -120,6 +121,10 @@ public class DroidGap extends Activity {
     	
         WebViewReflect.setStorage(settings, true, "/data/data/" + appPackage + "/app_database/");
         
+		// Disable cookies
+		CookieManager cookieManager = CookieManager.getInstance();
+		cookieManager.setAcceptCookie(false);
+
         // Turn on DOM storage!
         WebViewReflect.setDomStorage(settings);
         // Turn off native geolocation object in browser - we use our own :)

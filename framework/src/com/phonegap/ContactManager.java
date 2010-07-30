@@ -2,9 +2,11 @@ package com.phonegap;
 
 import android.provider.Contacts.ContactMethods;
 import android.provider.Contacts.People;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.webkit.WebView;
 import android.app.Activity;
+import android.content.Context;
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.database.Cursor;
@@ -31,6 +33,100 @@ public class ContactManager {
 	{
 		mApp = app;
 		mView = view;
+	}
+	
+	public void getAllContacts() {
+		
+		Cursor contactsCursor = mApp.getContentResolver().query(
+			ContactsContract.Contacts.CONTENT_URI, 
+			null, 
+			null, 
+			null, 
+			null
+		);
+		
+		// Let's walk our address book.  I apologize for any typos, since this was
+		// written in an e-mail client, rather than an editor!  Hopefully I did
+		// get this right...
+		//
+		Cursor cursor = mApp.getContentResolver().query(ContactsContract.Contacts.CONTENT_URI,null, null, null, null);
+		
+		if (cursor.moveToFirst()) {
+			
+			Log.d(LOG_TAG, "Contacts found.");
+			
+		 	do {
+				String contactId = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts._ID) );
+				String name = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts._ID) );
+				String hasPhone = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER) );
+				Log.d("_ID", contactId);
+				Log.d("HAS_PHONE_NUMBER", hasPhone);
+				//if (Boolean.parseBoolean(hasPhone)) {
+					// We have a phone number, so let's query this:
+					Log.d(LOG_TAG, "There's phone numbers");
+					Cursor phones = mApp.getContentResolver().query(
+						ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+						null, 
+						ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId, 
+						null, 
+						null
+					);
+				
+					while (phones.moveToNext()) {
+						
+						// Get the phone number.  If your contact has combined several 
+						// raw contacts, you might get a duplicated number. (I think?)
+						//
+						String phoneNumber = phones.getString(
+							phones.getColumnIndex(
+								ContactsContract.CommonDataKinds.Phone.NUMBER
+							)
+						);
+						Log.d(LOG_TAG, phoneNumber);
+						//[ ... do something with phone number here ... ]         
+						mView.loadUrl("javascript:navigator.contacts.droidFoundContact('" + name + "','" + phoneNumber + "','')"); //,'" + email +"')");    
+					
+					}
+					phones.close();
+				/*} else {
+					Log.d("NADA", "ZULCH");
+				}*/
+			
+				/*
+				Cursor emails = mApp.getContentResolver().query(
+					ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+					null,
+					ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = " + contactId,
+					null, 
+					null
+				);
+			
+				while (emails.moveToNext()) {
+					// Like phone numbers, if your contact has combined several
+					// raw contacts, you can get the same e-mail address more than
+					// once.
+					//          
+					String emailAddress = emails.getString(
+						emails.getColumnIndex(
+							ContactsContract.CommonDataKinds.CommonDataColumns.DATA
+						)
+					);
+				
+					//[ ... do something with the address ... ]
+				}
+				emails.close();
+				*/
+			} while (cursor.moveToNext());
+			
+			cursor.close();
+			
+			mView.loadUrl("javascript:navigator.contacts.droidDone();");
+			
+		} else {
+			mView.loadUrl("javascript:navigator.contacts.fail('None found!')");
+		}
+		
+		
 	}
 	
 	// This is to add backwards compatibility to the OLD Contacts API\

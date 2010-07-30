@@ -54,6 +54,15 @@ Contacts.prototype.find = function(obj, win, fail)
   this.fail = fail;
 }
 
+Contacts.prototype.getAllContacts = function(win, fail) {
+	
+	ContactHook.getAllContacts();
+	
+	this.win = win;
+	this.fail = fail;
+	
+}
+
 Contacts.prototype.droidFoundContact = function(name, npa, email)
 {
   var contact = new Contact();
