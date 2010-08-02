@@ -45,25 +45,21 @@ public class ContactManager {
 			null
 		);
 		
-		// Let's walk our address book.  I apologize for any typos, since this was
-		// written in an e-mail client, rather than an editor!  Hopefully I did
-		// get this right...
-		//
+		// Get all contacts
 		Cursor cursor = mApp.getContentResolver().query(ContactsContract.Contacts.CONTENT_URI,null, null, null, null);
 		
 		if (cursor.moveToFirst()) {
 			
-			Log.d(LOG_TAG, "Contacts found.");
-			
 		 	do {
+				String phonesJS = "[";
 				String contactId = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts._ID) );
-				String name = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts._ID) );
+				String name = cursor.getString( cursor.getColumnIndex("display_name") );
 				String hasPhone = cursor.getString( cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER) );
-				Log.d("_ID", contactId);
-				Log.d("HAS_PHONE_NUMBER", hasPhone);
+				
 				//if (Boolean.parseBoolean(hasPhone)) {
+				if (Integer.parseInt(hasPhone) > 0) {
+					
 					// We have a phone number, so let's query this:
-					Log.d(LOG_TAG, "There's phone numbers");
 					Cursor phones = mApp.getContentResolver().query(
 						ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
 						null, 
@@ -71,7 +67,7 @@ public class ContactManager {
 						null, 
 						null
 					);
-				
+					
 					while (phones.moveToNext()) {
 						
 						// Get the phone number.  If your contact has combined several 
@@ -82,16 +78,43 @@ public class ContactManager {
 								ContactsContract.CommonDataKinds.Phone.NUMBER
 							)
 						);
-						Log.d(LOG_TAG, phoneNumber);
-						//[ ... do something with phone number here ... ]         
-						mView.loadUrl("javascript:navigator.contacts.droidFoundContact('" + name + "','" + phoneNumber + "','')"); //,'" + email +"')");    
-					
+						
+						Integer type = Integer.parseInt(
+							phones.getString(
+								phones.getColumnIndex(
+									ContactsContract.CommonDataKinds.Phone.TYPE
+								)
+							)
+						);
+						
+						String label = "";
+						switch (type) {
+							case ContactsContract.CommonDataKinds.Phone.TYPE_HOME:
+								label = "home";
+								break;
+							case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE:
+								label = "mobile";
+								break;
+							default:
+								label = "other";
+						}
+						
+						//Log.d(LOG_TAG, ContactsContract.CommonDataKinds.Phone.LABEL);
+						/*String label = phones.getString(
+							phones.getColumnIndex(
+								ContactsContract.CommonDataKinds.Phone.LABEL
+							)
+						);*/
+						
+						phonesJS = phonesJS + "{number: '"+phoneNumber+"', label: '"+label+"'},";
+						
 					}
 					phones.close();
-				/*} else {
-					Log.d("NADA", "ZULCH");
-				}*/
-			
+					
+				}
+				phonesJS = phonesJS + "]";
+				mView.loadUrl("javascript:navigator.contacts.droidFoundContact('" + name + "'," + phonesJS + ",'')"); //,'" + email +"')");    
+				
 				/*
 				Cursor emails = mApp.getContentResolver().query(
 					ContactsContract.CommonDataKinds.Email.CONTENT_URI,
