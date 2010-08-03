@@ -34,11 +34,14 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -73,6 +76,9 @@ public class DroidGap extends Activity {
 	private CryptoHandler crypto;
 	private BrowserKey mKey;
 	private AudioHandler audio;
+	private UIControls uiControls;
+	
+	public UIControls.MenuItem[] menuItems;
 
 	private Uri imageUri;
 	
@@ -161,6 +167,7 @@ public class DroidGap extends Activity {
     	crypto = new CryptoHandler(appView);
     	mKey = new BrowserKey(appView, this);
     	audio = new AudioHandler(appView, this);
+		uiControls = new UIControls(appView, this);
     	
     	// This creates the new javascript interfaces for PhoneGap
     	appView.addJavascriptInterface(gap, "DroidGap");
@@ -173,6 +180,7 @@ public class DroidGap extends Activity {
     	appView.addJavascriptInterface(crypto, "GapCrypto");
     	appView.addJavascriptInterface(mKey, "BackButton");
     	appView.addJavascriptInterface(audio, "GapAudio");
+		appView.addJavascriptInterface(uiControls, "UIControlsHook");
     	
     	
     	if (android.os.Build.VERSION.RELEASE.startsWith("1."))
@@ -358,5 +366,49 @@ public class DroidGap extends Activity {
     {
       return this.appView;
     }
-      
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		
+		// Build from this.menuItems
+		if (this.menuItems.length > 0) {
+			
+			for (int i=0; i<this.menuItems.length; i++) {
+				
+				//menu.add(this.menuItems[i].groupid, this.menuItems[i].id, order, this.menuItems[i].title);
+				MenuItem item = menu.add(0, menuItems[i].id, i, menuItems[i].title);
+				
+				// Add icon
+				try {
+					
+					// TODO: handle standard icons i.e. item.setIcon(android.R.drawable.ic_menu_preferences)
+					item.setIcon(new BitmapDrawable(this.getResources(), this.getAssets().open(menuItems[i].icon)));
+					
+				} catch(java.io.FileNotFoundException e) {
+					
+					Log.d(LOG_TAG, e.toString());
+					
+				} catch(java.io.IOException e) {
+					
+					Log.d(LOG_TAG, e.toString());
+					throw new RuntimeException(e);
+					
+				}
+				
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean onOptionsItemSelected(MenuItem item) {
+		
+		// callbacks
+		this.appView.loadUrl("javascript:navigator.uicontrols.tabBarItemSelected("+ item.getItemId() +")");
+		return true;
+		
+	}
+	
 }
